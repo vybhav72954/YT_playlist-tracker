@@ -13,8 +13,9 @@ Each video is listed with a clickable link, and you and your friends can mark pr
 
 2. Enable Google Sheets API and Google Drive API in Google Cloud.
 Download your service account key as credentials.json and place it in the project root.
+3. *First time using Google Console?* I have added more details [here](API-SETUP.md)!
 
-3. Create a ```.env``` file in the project root:
+4. Create a ```.env``` file in the project root:
 
 ```bash
 PLAYLIST_URL=https://www.youtube.com/playlist?list=YOUR_PLAYLIST_ID
@@ -23,7 +24,7 @@ PARTICIPANTS=Alice,Bob,Charlie
 SHEET_NAME=MyPlaylistTracker
 SHARE_EMAIL=your_email@gmail.com
 ```
-4. Run
+5. Run
 ```bash
 python main.py
 ```
