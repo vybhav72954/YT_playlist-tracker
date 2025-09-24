@@ -3,6 +3,8 @@
 Turn your favorite YouTube playlist into a Google Sheet for real-time tracking and collaboration with friends.
 Each video is listed with a clickable link, and you and your friends can mark progress directly in the sheet.
 
+[![image.png](https://i.postimg.cc/cHsnZqFc/image.png)](https://postimg.cc/bGBJH5cG)
+
 ## Setup
 
 1. Install requirements:
