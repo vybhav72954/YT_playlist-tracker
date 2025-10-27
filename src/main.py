@@ -78,8 +78,6 @@ spreadsheet = client.open(sheet_name)
 spreadsheet.share(share_email, perm_type="user", role="writer")  # replace with your Gmail
 
 worksheet = spreadsheet.get_worksheet(0)
-
-
 worksheet.update([df.columns.values.tolist()] + df.values.tolist(),
                  value_input_option='USER_ENTERED')
 # Formatting Block
