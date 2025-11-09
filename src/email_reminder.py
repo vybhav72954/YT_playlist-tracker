@@ -36,7 +36,7 @@ for i, row in enumerate(records, start=2):
     if row["Day"]=="Weekend":
         continue
     scheduled_date = datetime.fromisoformat(row["Date"]).date()
-    if today > scheduled_date + timedelta(days=0):  # 3-day leeway
+    if today > scheduled_date + timedelta(days=3):  # 3-day leeway
         for p in contacts:
             if not row[p]:  # if participant hasn't marked as done
                 # Extract formula from cell
