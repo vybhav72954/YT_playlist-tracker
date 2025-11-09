@@ -6,3 +6,4 @@ yt-dlp
 gspread
 oauth2client
 python-dotenv
+gspread_formatting
