@@ -8,7 +8,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import logging
 
-# Setup Logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -24,7 +23,6 @@ logger.info(f"Script started at {datetime.now()}")
 
 load_dotenv()
 
-# Validate required environment variables
 required_vars = ["SMTP_EMAIL", "SMTP_PASSWORD", "EMAIL_CONTACTS", "PLAYLIST_NAME", "SHEET_NAME"]
 missing = [var for var in required_vars if not os.getenv(var)]
 if missing:
@@ -41,7 +39,6 @@ except Exception as e:
     logger.error(f"Failed to parse EMAIL_CONTACTS: {e}")
     raise
 
-# Get configuration with defaults
 REMINDER_DAYS = [int(d.strip()) for d in os.getenv("REMINDER_DAYS", "1,4").split(",")]
 LEEWAY_DAYS = int(os.getenv("LEEWAY_DAYS", "3"))
 EMAIL_ENABLED = os.getenv("EMAIL_ENABLED", "true").lower()=="true"
@@ -52,12 +49,12 @@ if DRY_RUN:
 
 logger.info(f"Configuration: REMINDER_DAYS={REMINDER_DAYS}, LEEWAY_DAYS={LEEWAY_DAYS}, EMAIL_ENABLED={EMAIL_ENABLED}")
 
-# Check if emails are enabled
+# Added an Email Flag for clean debugging
 if not EMAIL_ENABLED:
     logger.info("Emails disabled in configuration. Exiting.")
     exit(0)
 
-# Check if today is a reminder day (for weekly digest)
+# COMPLETE - Shift from Daily to weekly
 today_weekday = datetime.today().weekday()
 if today_weekday not in REMINDER_DAYS:
     logger.info(
@@ -104,14 +101,11 @@ for i, row in enumerate(records, start=2):
     for p in contacts:
         total_videos[p] += 1
 
-        # Check if participant marked as done
         status = str(row.get(p, "")).strip().lower()
         if status=="done":
             completed_videos[p] += 1
         elif today > scheduled_date + timedelta(days=LEEWAY_DAYS):
-            # Video is overdue (past leeway period)
             try:
-                # Extract formula from cell
                 formula = worksheet.cell(i, url_col_idx, value_render_option='FORMULA').value
                 url = ""
                 if formula and formula.startswith("=HYPERLINK"):
@@ -128,7 +122,6 @@ logger.info(f"Overdue videos found: {sum(len(tasks) for tasks in overdue.values(
 
 
 def send_email(to_email, subject, body_html):
-    """Send email with error handling"""
     try:
         msg = MIMEMultipart("alternative")
         msg["From"] = EMAIL
@@ -157,7 +150,6 @@ def send_email(to_email, subject, body_html):
 
 
 def create_progress_html(person, tasks, total, completed):
-    """Create rich HTML email with progress tracking"""
     progress_pct = (completed / total * 100) if total > 0 else 0
 
     progress_bar = f"""
@@ -245,7 +237,6 @@ emails_sent = 0
 emails_failed = 0
 
 for person, tasks in overdue.items():
-    # Send weekly digest regardless of overdue status
     total = total_videos[person]
     completed = completed_videos[person]
 

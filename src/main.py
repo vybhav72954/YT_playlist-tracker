@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 import os
 import logging
 
-# Setup Logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -20,10 +19,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Environment Configuration
 load_dotenv()
 
-# Validate required environment variables
 required_vars = ["PLAYLIST_URL", "START_DATE", "PARTICIPANTS", "SHEET_NAME", "SHARE_EMAIL"]
 missing = [var for var in required_vars if not os.getenv(var)]
 if missing:
@@ -44,12 +41,10 @@ if DRY_RUN:
     logger.info("DRY RUN MODE - No actual changes will be made to Google Sheets")
 
 
-# Backup credentials before operations
 def backup_credentials():
     """Backup credentials.json - keeps only the most recent backup"""
     if os.path.exists("credentials.json"):
-        # Delete old backups
-        for old_backup in os.listdir("."):
+        for old_backup in os.listdir("."): # Added a Delete backup routine
             if old_backup.startswith("credentials_backup_") and old_backup.endswith(".json"):
                 try:
                     os.remove(old_backup)
@@ -62,21 +57,18 @@ def backup_credentials():
 
 
 def clean_title(title):
-    """Remove problematic characters from video titles"""
-    # Remove emojis and special chars that break Google Sheets
+    # Title Cleaning - Emojis can break the Google Sheets
     cleaned = re.sub(r'[^\w\s\-\(\).,!?]', '', title).strip()
     return cleaned if cleaned else "Untitled Video"
 
 
 def is_valid_youtube_url(url):
-    """Validate YouTube URL format"""
     pattern = r'^https://www\.youtube\.com/watch\?v=[\w-]+$'
     return bool(re.match(pattern, url))
 
 
 def export_backup(data, filename="tracker_backup"):
-    """Export data as CSV backup - keeps only the most recent backup"""
-    backup_dir = "backups"
+    backup_dir = "backups" # Created a backup routine for easier debugging
     os.makedirs(backup_dir, exist_ok=True)
 
     # Delete old backups with same filename prefix
@@ -96,10 +88,8 @@ def export_backup(data, filename="tracker_backup"):
     logger.info(f"Backup saved to {backup_file}")
 
 
-# Backup credentials
 backup_credentials()
 
-# Fetch playlist with error handling
 logger.info(f"Fetching playlist from: {playlist_url}")
 cmd = ["yt-dlp", "-J", "--flat-playlist", playlist_url]
 
@@ -126,7 +116,6 @@ except Exception as e:
     logger.error(f"Unexpected error fetching playlist: {e}")
     raise
 
-# Process and validate videos
 videos = []
 skipped_count = 0
 
@@ -151,7 +140,6 @@ day_counter, video_index = 1, 0
 current_date = start_date
 
 while video_index < len(videos):
-    # Weekend for break and revision
     if current_date.weekday() >= 5:  # Sat=5, Sun=6
         row = {
             "Day":"Weekend",
@@ -165,8 +153,7 @@ while video_index < len(videos):
         current_date += timedelta(days=1)
         continue
 
-    # 3 Videos per day
-    for i in range(3):
+    for i in range(3):     # 3 Videos per day, can be changed as required
         if video_index < len(videos):
             title, url = videos[video_index]
             row = {
@@ -187,7 +174,6 @@ completion_date = current_date - timedelta(days=1)
 logger.info(f"Created schedule with {len(df)} rows spanning {day_counter - 1} working days")
 logger.info(f"Start: {start_date.strftime('%Y-%m-%d')}, End: {completion_date.strftime('%Y-%m-%d')}")
 
-# Export backup of the schedule
 export_backup([df.columns.values.tolist()] + df.values.tolist(), "schedule_data")
 
 if DRY_RUN:
@@ -197,7 +183,7 @@ if DRY_RUN:
     logger.info("Exiting without making changes to Google Sheets")
     exit(0)
 
-# Google API!
+# API Calls
 logger.info("Connecting to Google Sheets...")
 scope = ["https://spreadsheets.google.com/feeds",
          "https://www.googleapis.com/auth/drive"]
@@ -225,30 +211,25 @@ worksheet.update([df.columns.values.tolist()] + df.values.tolist(),
                  value_input_option='USER_ENTERED')
 logger.info("Updated spreadsheet with schedule data")
 
-# Formatting Block
-
-# --- Freeze header row
+# Excel Block TODO - Add further formatting
 worksheet.freeze(rows=1)
 
-# --- Bold + background color for headers
 fmt = {
     "backgroundColor":{"red":0.74, "green":0.86, "blue":0.95},  # light blue
     "textFormat":{"bold":True}
 }
 worksheet.format("1:1", fmt)
 
-# --- Add data validation dropdown for participant columns
-# --- Add data validation dropdown for participant columns
-from gspread_formatting import set_data_validation_for_cell_range
+from gspread_formatting import set_data_validation_for_cell_range # Call Data Validation Library
 
 for p in participants:
     if p in df.columns:
         col_idx = df.columns.get_loc(p)
-        col_letter = chr(65 + col_idx)  # A=65 in ASCII
+        col_letter = chr(65 + col_idx)  # A Column
 
         try:
             rule = DataValidationRule(
-                BooleanCondition('ONE_OF_LIST', ['done', 'skipped', 'in progress']),
+                BooleanCondition('ONE_OF_LIST', ['done', 'skipped', 'in progress']), #Drop Down Validation
                 showCustomUi=True
             )
             set_data_validation_for_cell_range(
@@ -270,7 +251,6 @@ for p in participants:
         col_idx = df.columns.get_loc(p)  # 0-based
         top_left = rowcol_to_a1(2, col_idx + 1)
 
-        # --- "done" conditional formatting
         requests.append({
             "addConditionalFormatRule":{
                 "rule":{
@@ -293,7 +273,6 @@ for p in participants:
             }
         })
 
-        # --- red conditional formatting for empty cells
         requests.append({
             "addConditionalFormatRule":{
                 "rule":{
@@ -316,7 +295,6 @@ for p in participants:
             }
         })
 
-# --- Colour Bands (repeated every week)
 day_colors = [
     {"red":0.9, "green":0.95, "blue":1.0},  # Day 1: light blue
     {"red":0.9, "green":0.85, "blue":0.9},  # Day 2: light purple
@@ -353,7 +331,7 @@ for i, color in enumerate(day_colors, start=1):
         }
     })
 
-# --- Weekend rows
+# -Weekend = No Videos Planned
 requests.append({
     "addConditionalFormatRule":{
         "rule":{
