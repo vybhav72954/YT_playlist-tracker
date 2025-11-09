@@ -2,10 +2,14 @@
 Youtube_Tracker/*.json
 Youtube_Tracker/git/*
 *.env
-credentials.json
+src/credentials.json
 env
 .env
 *.xlsx
+src/backups/*
+src/*.json
+src/*.log
+src/*.txt
 
 ### JEnv template
 # JEnv local Java version configuration file

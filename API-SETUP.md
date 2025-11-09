@@ -22,9 +22,9 @@
 - Open your new service account.
 - Go to Keys → Add Key → Create New Key → JSON.
 - Download the file → rename it credentials.json.
-- Place it in your project root (same folder as main.py).
+- Place it in your project `src` (same folder as `main.py`).
 
-- ⚠️ Add credentials.json to .gitignore to keep it private. **Never commit it to GitHub**.
+- Add credentials.json to .gitignore to keep it private. **Never commit it to GitHub**.
 
 5. Share Your Google Sheet
 
